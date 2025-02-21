@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Simple Video Call</title>
+  <style>
+    video {
+      width: 45%;
+      margin: 2%;
+      background: #000;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>Local Video</h2>
+  <video id="localVideo" autoplay muted></video>
+  <h2>Remote Video</h2>
+  <video id="remoteVideo" autoplay></video>
+
+  <!-- Include Socket.IO client -->
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+  <script>
+    const socket = io('http://localhost:3003', { transports: ['websocket'] });
+    let room = prompt("Enter Room Code:");
+    socket.emit('joinRoom', { room });
+
+    // Get video elements
+    const localVideo = document.getElementById('localVideo');
+    const remoteVideo = document.getElementById('remoteVideo');
+
+    // Create a new RTCPeerConnection
+    const peerConnection = new RTCPeerConnection();
+
+    // Capture local media (video and audio)
+    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      .then(stream => {
+        localVideo.srcObject = stream;
+        stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
+      })
+      .catch(error => console.error('Error accessing media devices.', error));
+
+    // When a remote track is received, display it in the remoteVideo element
+    peerConnection.ontrack = event => {
+      if (!remoteVideo.srcObject) {
+        remoteVideo.srcObject = event.streams[0];
+      }
+    };
+
+    // Handle ICE candidates by sending them through the socket
+    peerConnection.onicecandidate = event => {
+      if (event.candidate) {
+        socket.emit('signal', { room, candidate: event.candidate });
+      }
+    };
+
+    // Listen for signaling messages via the socket
+    socket.on('signal', async (data) => {
+      if (data.sdp) {
+        try {
+          await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
+          if (data.sdp.type === 'offer') {
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+            socket.emit('signal', { room, sdp: peerConnection.localDescription });
+          }
+        } catch (err) {
+          console.error('Error setting remote description', err);
+        }
+      } else if (data.candidate) {
+        try {
+          await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+        } catch (err) {
+          console.error('Error adding received ICE candidate', err);
+        }
+      }
+    });
+
+    // Automatically create an offer if this is the first client
+    setTimeout(async () => {
+      try {
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+        socket.emit('signal', { room, sdp: peerConnection.localDescription });
+      } catch (err) {
+        console.error('Error creating an offer', err);
+      }
+    }, 1000);
+  </script>
+</body>
+
+</html>

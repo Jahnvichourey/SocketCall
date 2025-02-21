@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Video Call</title>
+  <style>
+    video {
+      width: 45%;
+      margin: 2%;
+      background: #000;
+    }
+
+    body {
+      text-align: center;
+      font-family: Arial, sans-serif;
+    }
+
+    #joinScreen {
+      display: block;
+    }
+
+    #callScreen {
+      display: none;
+    }
+
+    #chat {
+      margin-top: 20px;
+    }
+
+    #messages {
+      height: 200px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      padding: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="joinScreen">
+    <h1>Join a Video Call</h1>
+    <input type="email" id="email" placeholder="Enter your email" required>
+    <input type="text" id="room" placeholder="Enter room code" required>
+    <button onclick="joinRoom()">Join</button>
+  </div>
+
+  <div id="callScreen">
+    <h1>Video Call Screen</h1>
+    <h2>Local Video</h2>
+    <video id="localVideo" autoplay muted></video>
+    <h2>Remote Video</h2>
+    <video id="remoteVideo" autoplay></video>
+
+    <div id="chat">
+      <h2>Chat</h2>
+      <div id="messages"></div>
+      <input type="text" id="messageInput" placeholder="Type a message...">
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+  <script>
+    const socket = io();
+    let room;
+
+    function joinRoom() {
+      const email = document.getElementById('email').value.trim();
+      room = document.getElementById('room').value.trim();
+      if (email && room) {
+        socket.emit('joinRoom', { email, room });
+        document.getElementById('joinScreen').style.display = 'none';
+        document.getElementById('callScreen').style.display = 'block';
+        startCall();
+      } else {
+        alert('Please enter both email and room code.');
+      }
+    }
+
+    const localVideo = document.getElementById('localVideo');
+    const remoteVideo = document.getElementById('remoteVideo');
+    const peerConnection = new RTCPeerConnection();
+
+    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      .then(stream => {
+        localVideo.srcObject = stream;
+        stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
+      })
+      .catch(error => console.error('Error accessing media devices.', error));
+
+    peerConnection.ontrack = (event) => {
+      if (remoteVideo.srcObject !== event.streams[0]) {
+        remoteVideo.srcObject = event.streams[0];
+      }
+    };
+
+    peerConnection.onicecandidate = (event) => {
+      if (event.candidate) {
+        socket.emit('signal', { room, candidate: event.candidate });
+      }
+    };
+
+    socket.on('signal', async (data) => {
+      if (data.sdp) {
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
+        if (data.sdp.type === 'offer') {
+          const answer = await peerConnection.createAnswer();
+          await peerConnection.setLocalDescription(answer);
+          socket.emit('signal', { room, sdp: peerConnection.localDescription });
+        }
+      } else if (data.candidate) {
+        await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+      }
+    });
+
+    function startCall() {
+      setTimeout(async () => {
+        try {
+          const offer = await peerConnection.createOffer();
+          await peerConnection.setLocalDescription(offer);
+          socket.emit('signal', { room, sdp: offer });
+        } catch (err) {
+          console.error('Error creating offer:', err);
+        }
+      }, 1000);
+    }
+
+    // Chat functionality
+    function sendMessage() {
+      const messageInput = document.getElementById('messageInput');
+      const message = messageInput.value.trim();
+      if (message) {
+        socket.emit('chatMessage', { room, message });
+        displayMessage(`You: ${message}`);
+        messageInput.value = '';
+      }
+    }
+
+    socket.on('chatMessage', (data) => {
+        displayMessage(`RemoteUser: ${data.message}`); 
+    });
+
+    function displayMessage(message) {
+      const messagesDiv = document.getElementById('messages');
+      const messageElement = document.createElement('p');
+      messageElement.textContent = message;
+      messagesDiv.appendChild(messageElement);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+  </script>
+</body>
+
+</html>
