@@ -30,6 +30,7 @@ io.on('connection', (socket) => {
   io.to(room).emit('chatMessage', { message }); // Broadcasting message to the clients in the room
   });
 
+  // When a client sends a signaling message, broadcast it to others
   socket.on('signal', (data) => {
     const { room, ...signalData } = data;
     socket.to(room).emit('signal', signalData);

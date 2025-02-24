@@ -38,6 +38,7 @@
 </head>
 
 <body>
+
   <div id="joinScreen">
     <h1>Join a Video Call</h1>
     <input type="email" id="email" placeholder="Enter your email" required>
@@ -60,11 +61,15 @@
     </div>
   </div>
 
+  <!-- Include the Socket.IO client script (served automatically from your server) -->
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
   <script>
+    // Connect to the Socket.IO server
     const socket = io();
     let room;
 
+
+    // to join the room with email id and roomcode
     function joinRoom() {
       const email = document.getElementById('email').value.trim();
       room = document.getElementById('room').value.trim();
@@ -77,30 +82,36 @@
         alert('Please enter both email and room code.');
       }
     }
-
+    // Get references to video elements
     const localVideo = document.getElementById('localVideo');
     const remoteVideo = document.getElementById('remoteVideo');
+    // Create a new RTCPeerConnection
     const peerConnection = new RTCPeerConnection();
 
+    // Capture local media (video & audio)
     navigator.mediaDevices.getUserMedia({ video: true, audio: true })
       .then(stream => {
+        // Display local video stream
         localVideo.srcObject = stream;
+        // Add each media track to the peer connection
         stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
       })
       .catch(error => console.error('Error accessing media devices.', error));
-
+    
+    // When a remote track is received, display it in the remote video element
     peerConnection.ontrack = (event) => {
       if (remoteVideo.srcObject !== event.streams[0]) {
         remoteVideo.srcObject = event.streams[0];
       }
     };
-
+    // Handle ICE candidates and send them via Socket.IO
     peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
         socket.emit('signal', { room, candidate: event.candidate });
       }
     };
 
+    // Listen for signaling messages from the server
     socket.on('signal', async (data) => {
       if (data.sdp) {
         await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
@@ -114,6 +125,7 @@
       }
     });
 
+  // Optionally, automatically create an offer after a short delay if this client is initiating the call
     function startCall() {
       setTimeout(async () => {
         try {
@@ -126,7 +138,7 @@
       }, 1000);
     }
 
-    // Chat functionality
+  // Chat functionality
     function sendMessage() {
       const messageInput = document.getElementById('messageInput');
       const message = messageInput.value.trim();

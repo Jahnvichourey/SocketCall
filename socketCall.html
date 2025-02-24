@@ -57,9 +57,11 @@
 
     // Listen for signaling messages via the socket
     socket.on('signal', async (data) => {
+      // If the message contains an SDP offer/answer
       if (data.sdp) {
         try {
           await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
+          // If received SDP is an offer, create and send an answer
           if (data.sdp.type === 'offer') {
             const answer = await peerConnection.createAnswer();
             await peerConnection.setLocalDescription(answer);
@@ -69,6 +71,7 @@
           console.error('Error setting remote description', err);
         }
       } else if (data.candidate) {
+        // Add the received ICE candidate to the peer connection
         try {
           await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
         } catch (err) {
@@ -78,6 +81,7 @@
     });
 
     // Automatically create an offer if this is the first client
+    // In a production app, you’d handle roles more gracefully.
     setTimeout(async () => {
       try {
         const offer = await peerConnection.createOffer();
