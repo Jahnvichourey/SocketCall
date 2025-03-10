@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Chat</title>
+  <style>
+    body {
+  font-family: sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #fff;
+}
+
+.container {
+  width: 80%;
+  max-width: 800px;
+  margin: 20px auto;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 10px;
+}
+
+.chat-header {
+  text-align: center;
+  padding: 10px;
+  font-weight: bold;
+}
+
+#chat {
+  height: 300px;
+  overflow-y: scroll;
+  padding: 10px;
+  border: 1px solid #ccc;
+}
+
+#chat p {
+  margin: 5px 0;
+  padding: 5px;
+  border-radius: 5px;
+}
+
+#chat p.sender {
+  text-align: right;
+}
+
+#chat p.receiver {
+  text-align: left;
+}
+
+#chat p strong {
+  font-weight: bold;
+  display: block;
+}
+
+#chat p span.timestamp {
+  font-size: 0.8em;
+  display: block;
+  text-align: right;
+}
+
+.input-area {
+  padding: 10px;
+  display: flex;
+}
+
+#input {
+  flex-grow: 1;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+#send {
+  border: 1px solid #ccc;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  background: none;
+}
+
+.registration-form,
+.join-room-form {
+  padding: 20px;
+  text-align: center;
+}
+
+.registration-form input,
+.join-room-form input {
+  margin: 5px;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.registration-form button,
+.join-room-form button {
+  border: 1px solid #ccc;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  background: none;
+}
+
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="chat-header">
+      <h1>Chat</h1>
+    </div>
+
+    <div class="join-room-form">
+      <h2>Login</h2>
+      <input type="email" id="loginEmailInput" placeholder="Enter your email" /><br>
+      <input type="password" id="loginPasswordInput" placeholder="Enter your password" /><br>
+      <button id="loginButton">Login</button><br><br>
+      <h2>Join Chat</h2>
+      <input type="email" id="emailInput" placeholder="Enter your email" /><br>
+      <input type="text" id="roomCode" placeholder="Enter room code" /><br>
+      <button id="joinRoomButton">Join Room</button><br><br>
+      <input type="text" id="user2Input" placeholder="Enter user2 email" /><br>
+      <button id="createRoomButton">Create Room</button>
+    </div>
+
+    <div id="chat"></div>
+    <div class="input-area">
+      <input type="text" id="input" placeholder="Type your message..." />
+      <button id="send">Send</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script>
+    const socket = io('http://localhost:3003', {
+      transports: ['websocket']
+    });
+
+    let room = null;
+    let email = null;
+
+    const chat = document.getElementById('chat');
+    const input = document.getElementById('input');
+    const send = document.getElementById('send');
+    const joinRoomButton = document.getElementById('joinRoomButton');
+    const roomCodeInput = document.getElementById('roomCode');
+    const emailInput = document.getElementById('emailInput');
+    const createRoomButton = document.getElementById('createRoomButton');
+    const loginButton = document.getElementById('loginButton');
+    const loginEmailInput = document.getElementById('loginEmailInput');
+    const loginPasswordInput = document.getElementById('loginPasswordInput');
+    const user2Input = document.getElementById('user2Input');
+
+    loginButton.addEventListener('click', async () => {
+      const email = loginEmailInput.value;
+      const password = loginPasswordInput.value;
+
+      try {
+        const response = await axios.post('http://localhost:3003/api/users/login', {
+          email: email,
+          password: password
+        });
+
+        const token = response.data.token;
+        localStorage.setItem('token', token);
+        alert("Login successful!");
+      } catch (error) {
+        console.error("Error logging in:", error);
+        alert("Login failed. Please try again.");
+        return;
+      }
+    });
+
+    joinRoomButton.addEventListener('click', async () => {
+      email = emailInput.value;
+      room = roomCodeInput.value;
+
+      socket.emit('joinRoom', {
+        email: email,
+        room: room,
+        token: localStorage.getItem('token')
+      });
+    });
+
+    createRoomButton.addEventListener('click', async () => {
+      const user2 = user2Input.value;
+      email = emailInput.value;
+
+      try {
+        const response = await axios.post('http://localhost:3003/api/chatrooms', {
+          user1: email,
+          user2: user2
+        });
+
+        room = response.data.roomId;
+
+        socket.emit('joinRoom', {
+          email: email,
+          room: room,
+        });
+      } catch (error) {
+        console.error("Error creating room:", error);
+        alert("Room creation failed. Please try again.");
+        return;
+      }
+    });
+
+    send.addEventListener('click', () => {
+      const message = input.value;
+      socket.emit('chatMessage', {
+        room: room,
+        message: message,
+        email: email
+      }); // Send email with the message
+      input.value = '';
+    });
+
+    socket.on('chatMessage', ({
+      message,
+      email
+    }) => {
+      const messageElem = document.createElement('p');
+      messageElem.classList.add(email === email ? 'sender' : 'receiver');
+      const timestamp = new Date().toLocaleTimeString();
+      messageElem.innerHTML = `<strong>${email}:</strong> ${message}<span class="timestamp">${timestamp}</span>`;
+      chat.appendChild(messageElem);
+      chat.scrollTop = chat.scrollHeight; // Scroll to bottom
+    });
+
+    socket.on('loadMessages', (messages) => {
+      messages.forEach(message => {
+        const messageElem = document.createElement('p');
+        messageElem.classList.add(message.sender === email ? 'sender' : 'receiver');
+        const timestamp = new Date(message.timestamp).toLocaleTimeString();
+        messageElem.innerHTML = `<strong>${message.sender}:</strong> ${message.message}<span class="timestamp">${timestamp}</span>`;
+        chat.appendChild(messageElem);
+        chat.scrollTop = chat.scrollHeight; // Scroll to bottom
+      });
+    });
+  </script>
+</body>
+
+</html>

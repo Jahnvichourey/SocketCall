@@ -1,0 +1,82 @@
+<!-- register_superuser.html -->
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Register Super User</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.3.2/uuidv4.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            padding: 20px;
+        }
+    
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            margin: auto;
+        }
+    
+        input {
+            width: 90%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+    
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px;
+            width: 100%;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+    
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Register Super User</h2>
+    <input type="text" id="name" placeholder="Enter your name" /><br>
+    <input type="email" id="email" placeholder="Enter your email" /><br>
+    <input type="password" id="password" placeholder="Enter your password" /><br>
+    <input type="text" id="contactInfo" placeholder="Enter your contact information" /><br>
+    <input type="text" id="companyName" placeholder="Enter your company name" /><br>
+    <button id="registerSuperUser">Register Super User</button>
+
+    <script>
+        document.getElementById('registerSuperUser').addEventListener('click', async () => {
+            const userId = uuidv4();
+            try {
+                const response = await axios.post('http://localhost:3003/api/users/register/super', {
+                    userId,
+                    name: document.getElementById('name').value,
+                    email: document.getElementById('email').value,
+                    password: document.getElementById('password').value,
+                    contactInfo: document.getElementById('contactInfo').value,
+                    companyName: document.getElementById('companyName').value
+                });
+                alert("Super User registered successfully!");
+                window.location.href = 'login.html';
+            } catch (error) {
+                alert("Registration failed.");
+            }
+        });
+    </script>
+</body>
+
+</html>

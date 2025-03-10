@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Login Super User</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            padding: 20px;
+        }
+    
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            margin: auto;
+        }
+    
+        input {
+            width: 90%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+    
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px;
+            width: 100%;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+    
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Login Super User</h2>
+    <input type="email" id="loginEmail" placeholder="Enter your email" /><br>
+    <input type="password" id="loginPassword" placeholder="Enter your password" /><br>
+    <button id="loginSuperUser">Login</button>
+
+    <script>
+        document.getElementById('loginSuperUser').addEventListener('click', async () => {
+            try {
+                const response = await axios.post('http://localhost:3003/api/users/login', {
+                    email: document.getElementById('loginEmail').value,
+                    password: document.getElementById('loginPassword').value
+                });
+
+                const { token, user } = response.data;
+                if (user.role === "super") {
+                    localStorage.setItem('token', token);
+                    alert("Super User logged in successfully!");
+                    window.location.href = 'sub.html';
+                } else {
+                    alert("You are not a Super User.");
+                }
+            } catch (error) {
+                alert("Login failed.");
+            }
+        });
+    </script>
+</body>
+
+</html>

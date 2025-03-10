@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Password</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.3.2/uuidv4.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            margin: auto;
+        }
+
+        input {
+            width: 90%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px;
+            width: 100%;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>Update Password</h2>
+    <input type="email" id="email" placeholder="Enter your email" required><br>
+    <input type="password" id="oldPassword" placeholder="Enter old password"><br>
+    <input type="text" id="secretKey" placeholder="Enter secret key"><br>
+    <input type="password" id="newPassword" placeholder="Enter new password" required><br>
+    <button id="updatePassword">Update Password</button>
+
+    <p id="message"></p>
+
+    <script>
+        document.getElementById('updatePassword').addEventListener('click', async () => {
+            const email = document.getElementById("email").value;
+            const oldPassword = document.getElementById("oldPassword").value;
+            const secretKey = document.getElementById("secretKey").value;
+            const newPassword = document.getElementById("newPassword").value;
+
+            try {
+                const response = await axios.put("http://localhost:3003/api/users/reset-password", {
+                    email, oldPassword, secretKey, newPassword
+                });
+
+                if (response.status === 200) {
+                    document.getElementById("message").textContent = "Password updated successfully";
+                } else {
+                    document.getElementById("message").textContent = response.data.message;
+                }
+            } catch (error) {
+                document.getElementById("message").textContent = "An error occurred. Please try again.";
+            }
+        });
+    </script>
+</body>
+
+</html>

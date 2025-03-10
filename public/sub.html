@@ -1,0 +1,86 @@
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Register Sub User</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.3.2/uuidv4.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            padding: 20px;
+        }
+    
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            margin: auto;
+        }
+    
+        input {
+            width: 90%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+    
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px;
+            width: 100%;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+    
+        button:hover {
+            background-color: #218838;
+        }
+    </style>
+
+</head>
+
+<body>
+    <h2>Register Sub User</h2>
+    <input type="text" id="subUserName" placeholder="Enter your name" /><br>
+    <input type="email" id="subUserEmail" placeholder="Enter your email" /><br>
+    <input type="password" id="subUserPassword" placeholder="Enter your password" /><br>
+    <input type="text" id="subUserContactInfo" placeholder="Enter your contact information" /><br>
+    <button id="registerSubUser">Register Sub User</button>
+
+    <script>
+        document.getElementById('registerSubUser').addEventListener('click', async () => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert("You must be logged in as a Super User to register a Sub User.");
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                await axios.post('http://localhost:3003/api/users/register/sub', {
+                    userId: uuidv4(),
+                    name: document.getElementById('subUserName').value,
+                    email: document.getElementById('subUserEmail').value,
+                    password: document.getElementById('subUserPassword').value,
+                    contactInfo: document.getElementById('subUserContactInfo').value
+                }, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                alert("Sub User registered successfully!");
+            } catch (error) {
+                alert("Sub User registration failed.");
+            }
+        });
+    </script>
+</body>
+
+</html>

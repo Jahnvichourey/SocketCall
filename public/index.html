@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Chat SDK Test Page</title>
+</head>
+
+<body>
+    <h1>Chat SDK Test Page</h1>
+
+    <h2>Register User</h2>
+    <input type="email" id="registerEmail" placeholder="Email">
+    <input type="text" id="registerName" placeholder="Name">
+    <button onclick="registerUser()">Register</button>
+    <p id="registerResult"></p>
+
+    <h2>Create Chatroom</h2>
+    <input type="text" id="createChatroomUser1" placeholder="User 1 ID">
+    <input type="text" id="createChatroomUser2" placeholder="User 2 ID">
+    <button onclick="createChatroom()">Create</button>
+    <p id="createChatroomResult"></p>
+
+    <h2>Send Message</h2>
+    <input type="text" id="sendMessageRoomId" placeholder="Room ID">
+    <input type="text" id="sendMessageSenderId" placeholder="Sender ID">
+    <input type="text" id="sendMessageReceiverId" placeholder="Receiver ID">
+    <input type="text" id="sendMessageMessage" placeholder="Message">
+    <button onclick="sendMessage()">Send</button>
+    <p id="sendMessageResult"></p>
+
+    <h2>Get Chatroom Messages</h2>
+    <input type="text" id="getMessagesRoomId" placeholder="Room ID">
+    <button onclick="getMessages()">Get Messages</button>
+    <p id="getMessagesResult"></p>
+
+    <script>
+        const API_BASE_URL = "http://localhost:3003/api";
+
+        async function registerUser() {
+            const email = document.getElementById("registerEmail").value;
+            const name = document.getElementById("registerName").value;
+
+            const response = await fetch(API_BASE_URL + "/users/register", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ email: email, name: name })
+            });
+
+            const data = await response.json();
+            document.getElementById("registerResult").innerText = JSON.stringify(data);
+        }
+
+        async function createChatroom() {
+            const user1 = document.getElementById("createChatroomUser1").value;
+            const user2 = document.getElementById("createChatroomUser2").value;
+
+            const response = await fetch(API_BASE_URL + "/chatrooms", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ user1, user2 })
+            });
+
+            const data = await response.json();
+            document.getElementById("createChatroomResult").innerText = JSON.stringify(data);
+        }
+
+        async function sendMessage() {
+            const roomId = document.getElementById("sendMessageRoomId").value;
+            const senderId = document.getElementById("sendMessageSenderId").value;
+            const receiverId = document.getElementById("sendMessageReceiverId").value;
+            const message = document.getElementById("sendMessageMessage").value;
+
+            const response = await fetch(API_BASE_URL + "/chatrooms/" + roomId + "/messages", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ senderId, receiverId, message })
+            });
+
+            const data = await response.json();
+            document.getElementById("sendMessageResult").innerText = JSON.stringify(data);
+        }
+
+        async function getMessages() {
+            const roomId = document.getElementById("getMessagesRoomId").value;
+
+            const response = await fetch(API_BASE_URL + "/chatrooms/" + roomId, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            });
+
+            const data = await response.json();
+            document.getElementById("getMessagesResult").innerText = JSON.stringify(data);
+        }
+    </script>
+</body>
+
+</html>

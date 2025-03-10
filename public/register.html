@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Register</title>
+  <style>
+    body {
+  font-family: sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #fff;
+}
+
+.container {
+  width: 80%;
+  max-width: 800px;
+  margin: 20px auto;
+  border: 1px solid #ccc;
+  padding: 10px;
+}
+
+.chat-header {
+  text-align: center;
+  padding: 10px;
+  font-weight: bold;
+  border-bottom: 1px solid #ccc;
+}
+
+.registration-form {
+  padding: 20px;
+  text-align: center;
+}
+
+.registration-form input {
+  margin: 5px;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.registration-form button {
+  border: 1px solid #ccc;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  background: none;
+}
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="chat-header">
+      <h1>Register</h1>
+    </div>
+
+    <div class="registration-form">
+      <h2>Register Super User</h2>
+      <input type="text" id="name" placeholder="Enter your name" /><br>
+      <input type="email" id="email" placeholder="Enter your email" /><br>
+      <input type="password" id="password" placeholder="Enter your password" /><br>
+      <input type="text" id="contactInfo" placeholder="Enter your contact information" /><br>
+      <input type="text" id="companyName" placeholder="Enter your company name" /><br>
+      <button id="registerSuperUser">Register Super User</button>
+    </div>
+
+    <div class="registration-form">
+      <h2>Register Sub User</h2>
+      <input type="text" id="subUserName" placeholder="Enter your name" /><br>
+      <input type="email" id="subUserEmail" placeholder="Enter your email" /><br>
+      <input type="password" id="subUserPassword" placeholder="Enter your password" /><br>
+      <input type="text" id="subUserContactInfo" placeholder="Enter your contact information" /><br>
+      <button id="registerSubUser">Register Sub User</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.3.2/uuidv4.min.js"></script>
+  <script>
+    const registerSuperUserButton = document.getElementById('registerSuperUser');
+    const registerSubUserButton = document.getElementById('registerSubUser');
+    const nameInput = document.getElementById('name');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const contactInfoInput = document.getElementById('contactInfo');
+    const companyNameInput = document.getElementById('companyName');
+    const subUserNameInput = document.getElementById('subUserName');
+    const subUserEmailInput = document.getElementById('subUserEmail');
+    const subUserPasswordInput = document.getElementById('subUserPassword');
+    const subUserContactInfoInput = document.getElementById('subUserContactInfo');
+
+    registerSuperUserButton.addEventListener('click', async () => {
+      const name = nameInput.value;
+      const email = emailInput.value;
+      const password = passwordInput.value;
+      const contactInfo = contactInfoInput.value;
+      const companyName = companyNameInput.value;
+      const userId = uuidv4();
+
+      // Call the /register/super endpoint
+      try {
+        const response = await axios.post('http://localhost:3003/api/users/register/super', {
+          userId: userId,
+          name: name,
+          email: email,
+          password: password,
+          contactInfo: contactInfo,
+          companyName: companyName
+        });
+
+        const token = response.data.token;
+        localStorage.setItem('token', token);
+
+      } catch (error) {
+        console.error("Error registering super user:", error);
+        alert("Super user registration failed. Please try again.");
+        return;
+      }
+    });
+
+    registerSubUserButton.addEventListener('click', async () => {
+      const name = subUserNameInput.value;
+      const email = subUserEmailInput.value;
+      const password = subUserPasswordInput.value;
+      const contactInfo = subUserContactInfoInput.value;
+      const userId = uuidv4();
+
+      // Call the /register/sub endpoint
+      try {
+        const response = await axios.post('http://localhost:3003/api/users/register/sub', {
+          userId: userId,
+          name: name,
+          email: email,
+          password: password,
+          contactInfo: contactInfo
+        });
+
+        const token = response.data.token;
+        localStorage.setItem('token', token);
+
+      } catch (error) {
+        console.error("Error registering sub user:", error);
+        alert("Sub user registration failed. Please try again.");
+        return;
+      }
+    });
+  </script>
+</body>
+
+</html>
